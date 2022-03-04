@@ -1,0 +1,72 @@
+---
+title: "Introduction to ARIMA Models Using R"
+author: "Laura Rose"
+date: "April 19, 2022"
+output: 
+  xaringan::moon_reader:
+    css: [rladies, rladies-fonts]
+    nature:
+      countIncrementalSlides: FALSE
+      
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+package_list <- c("fable", "feasts", "tsibble", "tidyverse")
+for (i in package_list){
+  if (!require(i, character.only = TRUE)){
+    install.packages(i, repos = 'http://cran.us.r-project.org', dependencies = TRUE)
+  library(i, character.only = TRUE)
+  }
+}
+
+```
+
+## Intro to ARIMA Models
+- ARIMA models are one of the most common univariate time series forecasting methods.
+
+--
+
+- ARIMA stands for **A**uto**R**egressive **I**ntegrated **M**oving **A**verage.
+
+--
+
+- We will explore each part of the ARIMA model in detail before moving on to its implementation in R.
+
+---
+
+## For Further Reading
+- Hyndman, R.J., & Athanasopoulos, G. (2021) *Forecasting: principles and practice*, 3rd edition, OTexts: Melbourne, Australia. OTexts.com/fpp3. Accessed on March 3, 2022.
+- Brooks, C. (2008). *Introductory Econometrics for Finance*, 2nd edition, Cambridge University Press: Cambridge, United Kingdom.
+
+---
+
+## Stationarity
+- A time series is said to be *strictly stationary* if the distribution of the observations does not change across time.
+
+--
+
+- However, strict stationarity is not always necessary to model a time series. We often reference *weak stationarity* in our analysis.
+
+--
+
+- $E(y_{t}) = \mu$ (constant mean)
+
+--
+
+- $E[(y_{t} - \mu)(y_{t} - \mu)] = \sigma^2 < \infty$ (constant variance)
+
+--
+
+- $E[(y_{t_{k}} - \mu)(y_{t_{k'}} - \mu)] = \gamma_{t_{k}-t_{k'}} \space \forall \space t_{k}, t_{k'}$ (constant autocovariance)
+
+--
+  - When $k = k'$, the autocovariance is the variance.
+  
+--
+
+- The autocovariance is not particularly useful since it is scale-dependent. Therefore, we often normalize the autocovariance by dividing by the variance.
+
+--
+
+- This is called the *autocorrelation*, and this measure has the usefulness of being bounded between $\pm1$
