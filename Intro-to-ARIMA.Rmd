@@ -70,3 +70,41 @@ for (i in package_list){
 --
 
 - This is called the *autocorrelation*, and this measure has the usefulness of being bounded between $\pm1$
+
+---
+
+## White Noise Process
+
+- A *white noise process* is a special case of a stationary process.
+
+--
+
+$$E(y_{t}) = 0$$
+
+--
+
+$$E[(y_{t} - \mu)(y_{t} - \mu)] = \sigma^2$$
+
+--
+
+$$\gamma_{k-k'} = \left\{\begin{aligned}
+&\sigma^2 &&if \space k = k'\\
+&0 && otherwise
+\end{aligned}
+\right.$$
+
+--
+
+- *Note that some definitions of a white noise process indicate a nonzero mean is permissible.*
+
+---
+
+## What to Do If Data is Nonstationary?
+- So what happens if we find our data violates any of the (weak) stationarity conditions?
+
+--
+
+- Note that data with trend or seasonality is not stationary, but data with cyclic behavior (i.e., business cycles which are not of fixed length) can be stationary.
+
+
+

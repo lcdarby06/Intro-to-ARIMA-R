@@ -58,7 +58,51 @@ class: center, middle, inverse, title-slide
 
 --
 
-- `\(E[(y_{t_{1}} - \mu)(y_{t_{2}} - \mu)] = \gamma_{t_{2}-t_{1}} \space \forall \space t_{1}, t_{2}\)` (constant autocovariance)
+- `\(E[(y_{t_{k}} - \mu)(y_{t_{k'}} - \mu)] = \gamma_{t_{k}-t_{k'}} \space \forall \space t_{k}, t_{k'}\)` (constant autocovariance)
+
+--
+  - When `\(k = k'\)`, the autocovariance is the variance.
+  
+--
+
+- The autocovariance is not particularly useful since it is scale-dependent. Therefore, we often normalize the autocovariance by dividing by the variance.
+
+--
+
+- This is called the *autocorrelation*, and this measure has the usefulness of being bounded between `\(\pm1\)`
+
+---
+
+## White Noise Process
+
+- A *white noise process* is a special case of a stationary process.
+
+--
+
+`$$E(y_{t}) = \mu$$`
+
+--
+
+`$$E[(y_{t} - \mu)(y_{t} - \mu)] = \sigma^2$$`
+
+--
+
+`$$\gamma_{k-k'} = \left\{\begin{aligned}
+&amp;\sigma^2 &amp;&amp;if \space k = k'\\
+&amp;0 &amp;&amp; otherwise
+\end{aligned}
+\right.$$`
+
+--
+
+\footnotesize
+
+- *Note that some definitions of a white noise process indicate a zero mean. However, this is not necessary for our purposes.*
+
+\normalsize
+
+
+
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
