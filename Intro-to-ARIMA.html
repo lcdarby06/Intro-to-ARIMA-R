@@ -79,7 +79,7 @@ class: center, middle, inverse, title-slide
 
 --
 
-`$$E(y_{t}) = \mu$$`
+`$$E(y_{t}) = 0$$`
 
 --
 
@@ -95,12 +95,37 @@ class: center, middle, inverse, title-slide
 
 --
 
-\footnotesize
+- *Note that some definitions of a white noise process indicate a nonzero mean is permissible.*
 
-- *Note that some definitions of a white noise process indicate a zero mean. However, this is not necessary for our purposes.*
+---
 
-\normalsize
+## What to Do If Data is Nonstationary?
+- So what happens if we find our data violates any of the (weak) stationarity conditions?
 
+--
+
+- Note that data with trend or seasonality is not stationary, but data with cyclic behavior (i.e., business or other cycles which are not of fixed length) can be stationary.
+
+--
+
+- Differencing the series is a common way to deal with nonstationarity resulting from autocorrelation. 
+
+--
+
+  - The difference of a value with the previous value is called *first-order differencing* ($y^{'}_{t} = y_{t} - y_{t-1}$).
+  
+--
+
+  - Sometimes this is not enough to make the series stationary, so we take the difference of the differences.
+
+--
+
+`$$\begin{align*}
+  y''_{t}  &amp;=  y'_{t}  - y'_{t - 1} \\
+           &amp;= (y_t - y_{t-1}) - (y_{t-1}-y_{t-2})\\
+           &amp;= y_t - 2y_{t-1} +y_{t-2}
+\end{align*}$$`
+  
 
 
     </textarea>
