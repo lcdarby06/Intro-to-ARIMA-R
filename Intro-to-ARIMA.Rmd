@@ -11,7 +11,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.retina = 3, warning = FALSE, message = FALSE)
 package_list <- c("fable", "feasts", "tsibble", "tidyverse")
 for (i in package_list){
   if (!require(i, character.only = TRUE)){
@@ -19,6 +19,8 @@ for (i in package_list){
   library(i, character.only = TRUE)
   }
 }
+data("BJSales")
+
 
 ```
 
@@ -112,7 +114,7 @@ $$\gamma_{k-k'} = \left\{\begin{aligned}
 
 --
 
-  - The difference of a value with the previous value is called *first-order differencing* ($y^{'}_{t} = y_{t} - y_{t-1}$).
+  - The difference of a value with the previous value is called *first-order differencing*: $y'_{t} = y_{t} - y_{t-1}$.
   
 --
 
@@ -125,6 +127,149 @@ $$\begin{align*}
            &= (y_t - y_{t-1}) - (y_{t-1}-y_{t-2})\\
            &= y_t - 2y_{t-1} +y_{t-2}
 \end{align*}$$
-  
+--
 
+- If we notice a seasonal pattern, we can take a seasonal difference: $y'_{t} = y_{t} - y_{t-m}$, where $m$ is the seasonal period. 
+
+---
+
+## What to Do if Data is Nonstationary, cont.
+
+- If the data looks like it may require both first-differencing and seasonal differencing, it's better to take the seasonal difference first.
+
+--
+
+- This is especially true in the case of strong seasonality, since sometimes taking a seasonal difference is enough to make the series stationary.
+
+--
+
+- However, taking a first difference will not get rid of seasonal stationarity.
+
+--
+
+- Always use as few differences as possible, since too much differencing can induce patterns in the series that are not actually there.
+
+--
+
+- If the variance appears nonconstant across time, a logarithmic transformation can be used to stabilize.
+
+---
+
+## How to Test for Nonstationarity
+
+- There are both formal and nonformal ways to examine the time series.
+
+--
+
+- We should always start by plotting the time series (line plot is generally best), since often nonstationarity and nonconstant variance are visible to the human eye.
+
+--
+
+- If we suspect nonstationarity, we should plot the autocorrelation function (ACF) and check for observations outside of the 95% confidence interval around 0. We particularly want to examine how quickly these autocorrelations drop to 0.
+
+--
+
+- To formally test for stationarity, we conduct a *unit root test*.
+
+--
+
+- Taking a cue from Dr. Hyndman, we will use the KPSS test, but other tests are available (ADF and PP tests).
+
+--
+
+- A *unit root* implies that the data is essentially a function of its lag(s) where the coefficient equals 1, plus some noise. (There are some variations on this, but we will skip discussion for the sake of simplicity.)
+  - In more formal terms, the root of the characteristic equation equals 1.
+
+---
+
+## An Example of Checking for Stationarity
+
+.pull_left[
+```{r plot-last, fig.show='hide', warning=FALSE, message=FALSE}
+data(BJsales)
+date.sequence <- seq(as.Date("1955-01-01"), 
+by = "month", length.out = 150)
+Sales_tsib <- tsibble(Month = yearmonth(date.sequence), 
+Sales = BJsales, index = Month)
+autoplot(Sales_tsib)
+```
+]
+
+--
+
+.pull_right[
+```{r ref.label='plot-last', echo=FALSE, fig.height=5, fig.width=9}
+```
+]
+
+---
+
+## Checking the ACF
+
+.pull_left[
+```{r plot-last2, fig.show='hide'}
+Sales_tsib %>% ACF() %>% autoplot()
+```
+]
+
+--
+
+.pull_right[
+```{r ref.label='plot-last2', echo=FALSE, fig.height=5, fig.width=9}
+```
+]
+
+---
+
+## Testing for a Unit Root 
+
+```{r uroot}
+uroot_table <- Sales_tsib %>% 
+features(Sales, unitroot_kpss) %>% 
+bind_cols(Sales_tsib %>%
+features(Sales, unitroot_ndiffs)) %>% 
+bind_cols(Sales_tsib %>% 
+features(Sales, unitroot_nsdiffs))
+knitr::kable(uroot_table, format = "html",
+digits = 2, align = "c")
+```
+
+--
+
+- We clearly have a unit root (we reject the null hypothesis of stationarity), but it doesn't look like we will need to take a seasonal difference.
+
+---
+
+## Backshift Notation
+
+- This notation is a helpful (hopefully!) shorthand to describe lags of variables for easier manipulation. Think of $B$ as "backshift." Some books/sites also use $L$ for "lag".
+
+--
+
+- $By_{t} = y_{t-1}$
+
+--
+
+- By extension, $B(By_{t}) = B^2y_{t} = y_{t-2}$, etc.
+
+--
+
+- Same quarter last year would be $B^4y_{t} = y_{t-4}$
+
+--
+
+- We can also use the backshift operator to describe differencing.
+$$y' = y_{t} - y_{t-1} = y_{t} - By_{t} = (1-B)y_{t}$$
+- We can treat the expressions in $B$ like polynomials and solve for roots (thus the unit root concept).
+  
+--
+
+$$\begin{align*}
+y'' &= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\ 
+    &= y_{t} - By_{t} - By_{t} + B^2y_{t}\\ 
+    &= y_{t} - 2By_{t} + B^2y_{t}\\ 
+    &= (B-1)^2y_{t}\\ 
+    &= (1-B)^2y_{t}
+\end{align*}$$
+  
 
