@@ -553,3 +553,152 @@ $$(1 - \phi_1B - ... - \phi_pB^p)(1-B)^dy_t = c + (1 + \theta_1B + ... + \theta_
   - Random walk w/drift = $ARIMA(0,1,0)$ w/constant
   - Autoregressive model = $ARIMA(p,0,0)$ 
   - Moving average model = $ARIMA(0,0,q)$
+
+---
+
+## Implementation of an ARIMA Model in R
+
+.pull-left[
+```{r arima}
+train_data <- Sales_tsib %>% 
+filter_index(~ "1966 June") # withhold data for testing
+fit <- train_data %>% model(ARIMA(Sales))
+```
+]
+
+--
+
+.pull-right[
+```{r arima-show}
+report(fit)
+```
+]
+
+- The `fable` implementation of the Hyndman-Khandakar algorithm selects a model specification based on unit root tests, maximum likelihood estimation, and minimization of the AICc (corrected Akaike Information Criterion which can be a good approximation for cross-validation).
+- A stepwise search process is used (unless `stepwise=FALSE` is denoted) so a limited amount of ARIMA models are considered.
+- Check out [this link](https://otexts.com/fpp3/arima-r.html) for more info and for details on other arguments.
+
+---
+
+## Residual Review
+
+- It's a good idea to check out the residuals to make sure there is no info contained in the residuals that could be utilized in the model.
+
+--
+
+.pull-left[
+```{r resid-review, fig.show='hide'}
+ljung.box <- fit %>% augment() %>%
+features(.innov, ljung_box, lag = 12, dof = 2)
+gg_tsresiduals(fit)
+```
+```{r ljung-box, echo=FALSE}
+knitr::kable(ljung.box, format = "html", align = "c")
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='resid-review', echo=FALSE, fig.height= 4}
+```
+
+]
+
+
+- Overall, the residuals look good. There are no values outside of the 95% confidence interval around zero in the ACF plot, although the residuals are not quite normally distributed.
+
+---
+
+## Forecasting with ARIMA Models
+
+- Forecasting is extremely simple with an ARIMA model (and really all models in the `fable` packages).
+- You can use English language for the `h` argument, or a number of periods you want to forecast. 
+- 80% and 95% intervals are included automatically. Specify `level = NULL` to not show these on the plot.
+- Note that to plot both the historical series and the forecast, you need to specify the data as the first argument of `autoplot()`.
+
+--
+
+.pull-left[
+```{r forecast-arima, fig.show='hide'}
+fit %>% 
+forecast(h = "1 year") %>%
+autoplot(Sales_tsib, level=95)
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='forecast-arima', echo=FALSE, fig.height=5}
+```
+]
+
+---
+
+## Checking the Accuracy of Our Model
+
+- When creating a model, measuring prediction/forecast accuracy is key. 
+- We withheld data to use for testing our forecast. This is called a *validation set approach*.
+- There are other cross-validation approaches, but these are outside of the scope of this presentation.
+
+```{r accuracy-arima}
+fcst <- fit %>% forecast(h = "1 year")
+fcst %>% accuracy(Sales_tsib) %>% knitr::kable(format = "html", align = "c")
+```
+
+- RMSE and MASE are commonly utilized accuracy measures. RMSE (Root Mean Square Error) is in the units of the variable of interest. 
+- MASE is a metric that measures how well a forecast performs relative to a naive forecast. A value $<1$ means that the forecast performs better than a naive forecast.
+
+---
+
+## But What If I Want to Specify The Model Myself?
+
+- "Back in my day", we didn't have `fable` to select an ARIMA model for us, so we had to figure it out ourselves.
+
+--
+
+- The traditional way is to rely on the ACF and PACF plots as a starting point.
+  - PACF stands for "Partial Autocorrelation Function", and is an autocorrelation function which controls for the effect of $y_{t-k}$ on $y_t$, removing the effects of lags $1...k-1$ on $y_t$.
+  - The partial autocorrelation for lag $k = \phi_k$, so it represents the $k$th (i.e., last) $p$ in an $AR(k)$ model.
+  - Thus, we look at the last significant partial autocorrelation to give us an idea of the order of $p$.
+
+--
+
+- If the data follows an $ARIMA(p,d,0)$ model, then for the **differenced** data:
+  - The ACF decays in an exponential or sinusoidal manner.
+  - The last significant spike in the PACF is at lag $p$, with nothing after.
+  
+--
+
+- If the data follows an $ARIMA(0,d,q)$ model, then for the **differenced** data:
+  - The last significant spike on the ACF is at lag $q$, with nothing after.
+  - The PACF decays in an exponential or sinusoidal way.
+
+--
+
+- However, these are not always informative, especially in cases where both $p$ and $q$ are not zero.
+
+---
+
+## Reviewing the PACF and ACF in R
+
+- Consider the sales data we previously modeled.
+- We know it is nonstationary and needs to be differenced once.
+
+.pull-left[
+```{r pacf-acf, fig.show='hide'}
+train_data %>% 
+gg_tsdisplay(difference(Sales), 
+plot_type = "partial")
+```
+
+- Neither the PACF nor the ACF seem to decay exponentially.
+
+- We could naively go with an $ARIMA(2,1,4)$ model, but this may be too complex.
+]
+
+.pull-right[
+```{r ref.label='pacf-acf', echo=FALSE, fig.height=6}
+```
+]
