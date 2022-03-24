@@ -5,9 +5,10 @@
     <meta charset="utf-8" />
     <meta name="author" content="Laura Rose" />
     <meta name="date" content="2022-04-19" />
-    <script src="Intro-to-ARIMA_files/header-attrs-2.9/header-attrs.js"></script>
-    <link href="Intro-to-ARIMA_files/remark-css-0.0.1/rladies.css" rel="stylesheet" />
-    <link href="Intro-to-ARIMA_files/remark-css-0.0.1/rladies-fonts.css" rel="stylesheet" />
+    <script src="libs/header-attrs-2.9/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/rladies-fonts.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/rladies.css" rel="stylesheet" />
   </head>
   <body>
     <textarea id="source">
@@ -205,7 +206,7 @@ class: center, middle, inverse, title-slide
 
 ## An Example of Checking for Stationarity
 
-.pull_left[
+.pull-left[
 
 ```r
 data(BJsales)
@@ -217,17 +218,15 @@ autoplot(Sales_tsib)
 ```
 ]
 
---
-
-.pull_right[
-&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-1-1.png" width="648" /&gt;
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-1-1.png" width="504" /&gt;
 ]
 
 ---
 
 ## Checking the ACF
 
-.pull_left[
+.pull-left[
 
 ```r
 Sales_tsib %&gt;% ACF() %&gt;% autoplot()
@@ -236,8 +235,8 @@ Sales_tsib %&gt;% ACF() %&gt;% autoplot()
 
 --
 
-.pull_right[
-&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-2-1.png" width="648" /&gt;
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-2-1.png" width="504" /&gt;
 ]
 
 ---
@@ -283,7 +282,7 @@ digits = 2, align = "c")
 
 ## Backshift Notation
 
-- This notation is a (hopefully!) helpful shorthand to describe lags of variables for easier manipulation. Think of `\(B\)` as "backshift." Some books/sites also use `\(L\)` for "lag".
+- This notation is a (hopefully!) helpful shorthand to describe lags of variables for easier manipulation. Think of `\(B\)` as "backshift."
 
 --
 
@@ -348,7 +347,7 @@ y'' &amp;= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\
 
 ## An Example of AR(1) Process
 
-.pull_left[
+.pull-left[
 
 ```r
 set.seed(5)
@@ -360,15 +359,15 @@ autoplot(value)
 
 --
 
-.pull_right[
-&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-3-1.png" width="648" /&gt;
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-3-1.png" width="504" /&gt;
 ]
 
 ---
 
-## Another Example of AR(1) Process
+## Another Example of AR(1)&lt;sup&gt;*&lt;/sup&gt; Process
 
-.pull_left[
+.pull-left[
 
 ```r
 set.seed(5)
@@ -381,15 +380,17 @@ autoplot(value)
 
 --
 
-.pull_right[
-&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-4-1.png" width="648" /&gt;
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-4-1.png" width="504" /&gt;
 ]
+
+.footnote[[*]&lt;small&gt;This is technically not an AR(1) model,&lt;br&gt; but rather an ARIMA(1,1,0).&lt;br&gt; We can see the difference in a stationary versus nonstationary series.&lt;/small&gt;]
 
 ---
 
 ## An Example of an AR(2) Process
 
-.pull_left[
+.pull-left[
 
 ```r
 set.seed(5)
@@ -402,15 +403,15 @@ autoplot(value)
 
 --
 
-.pull_right[
-&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-5-1.png" width="648" /&gt;
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-5-1.png" width="504" /&gt;
 ]
 
 ---
 
-## Another Example of an AR(2) Process
+## Another Example of an AR(2)&lt;sup&gt;*&lt;/sup&gt; Process
 
-.pull_left[
+.pull-left[
 
 ```r
 set.seed(5)
@@ -423,9 +424,11 @@ autoplot(value)
 
 --
 
-.pull_right[
-&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-6-1.png" width="648" /&gt;
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-6-1.png" width="504" /&gt;
 ]
+
+.footnote[[*]&lt;small&gt;This is technically not an AR(2) model,&lt;br&gt; but rather an ARIMA(2,1,0).&lt;br&gt; We can see the difference in a stationary versus nonstationary series.&lt;/small&gt;]
 
 ---
 
@@ -448,6 +451,52 @@ autoplot(value)
 --
 
 - `\(\varepsilon_{t}\)` is a white noise process with mean 0 and variance/standard deviation of 1.
+
+---
+
+## An Example of an MA(1) Process
+
+.pull-left[
+
+```r
+set.seed(5)
+arima.sim(list(order = c(0, 0, 1),
+ma = 0.5), n = 300) %&gt;%
+as_tsibble() %&gt;%
+autoplot(value)
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-7-1.png" width="504" /&gt;
+]
+
+---
+
+## An Example of an MA(2) Process
+
+.pull-left[
+
+
+```r
+set.seed(5)
+arima.sim(list(order = c(0, 0, 2),
+ma = c(0.6, 0.3)), n = 300) %&gt;%
+as_tsibble() %&gt;%
+autoplot(value)
+```
+
+]
+
+--
+
+.pull-right[
+
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-8-1.png" width="504" /&gt;
+
+]
 
 ---
 
@@ -499,7 +548,7 @@ y_{t} &amp;= \phi_{1}y_{t-1} + \varepsilon_{t}\\
 
 ## Putting It All Together
 
-- So far we've discussed `\(AR\)` models, `\(MA\)` models, and differencing time series to ensure stationarity ($I$ = *Integration*).
+- So far we've discussed `\(AR\)` models, `\(MA\)` models, and differencing time series to ensure stationarity (*I* = *Integration*).
 
 --
 
@@ -527,7 +576,8 @@ y_{t} &amp;= \phi_{1}y_{t-1} + \varepsilon_{t}\\
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({
-"countIncrementalSlides": false
+"countIncrementalSlides": false,
+"ratio": "16:9"
 });
 if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   window.dispatchEvent(new Event('resize'));

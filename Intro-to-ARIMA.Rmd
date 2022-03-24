@@ -4,9 +4,11 @@ author: "Laura Rose"
 date: "April 19, 2022"
 output: 
   xaringan::moon_reader:
-    css: [rladies, rladies-fonts]
+    css: [default, rladies-fonts, rladies]
+    lib_dir: libs
     nature:
-      countIncrementalSlides: FALSE
+      countIncrementalSlides: false
+      ratio: '16:9'
       
 ---
 
@@ -205,7 +207,7 @@ $$\begin{align*}
 
 ## An Example of Checking for Stationarity
 
-.pull_left[
+.pull-left[
 ```{r plot-last, fig.show='hide', warning=FALSE, message=FALSE}
 data(BJsales)
 date_sequence <- seq(as.Date("1955-01-01"), 
@@ -216,10 +218,8 @@ autoplot(Sales_tsib)
 ```
 ]
 
---
-
-.pull_right[
-```{r ref.label='plot-last', echo=FALSE, fig.height=5, fig.width=9}
+.pull-right[
+```{r ref.label='plot-last', echo=FALSE}
 ```
 ]
 
@@ -227,7 +227,7 @@ autoplot(Sales_tsib)
 
 ## Checking the ACF
 
-.pull_left[
+.pull-left[
 ```{r plot-last2, fig.show='hide'}
 Sales_tsib %>% ACF() %>% autoplot()
 ```
@@ -235,8 +235,8 @@ Sales_tsib %>% ACF() %>% autoplot()
 
 --
 
-.pull_right[
-```{r ref.label='plot-last2', echo=FALSE, fig.height=5, fig.width=9}
+.pull-right[
+```{r ref.label='plot-last2', echo=FALSE}
 ```
 ]
 
@@ -263,7 +263,7 @@ digits = 2, align = "c")
 
 ## Backshift Notation
 
-- This notation is a (hopefully!) helpful shorthand to describe lags of variables for easier manipulation. Think of $B$ as "backshift." Some books/sites also use $L$ for "lag".
+- This notation is a (hopefully!) helpful shorthand to describe lags of variables for easier manipulation. Think of $B$ as "backshift."
 
 --
 
@@ -328,7 +328,7 @@ $$y_{t} = c + \phi_{1}y_{t-1} + \phi_{2}y_{t-2} + ... + \phi_{p}y_{t-p} + \varep
 
 ## An Example of AR(1) Process
 
-.pull_left[
+.pull-left[
 ```{r ar-process, fig.show='hide'}
 set.seed(5)
 arima.sim(list(order = c(1, 0, 0),
@@ -339,16 +339,16 @@ autoplot(value)
 
 --
 
-.pull_right[
-```{r ref.label='ar-process', echo=FALSE, fig.height=5, fig.width=9}
+.pull-right[
+```{r ref.label='ar-process', echo=FALSE}
 ```
 ]
 
 ---
 
-## Another Example of AR(1) Process
+## Another Example of AR(1)<sup>*</sup> Process
 
-.pull_left[
+.pull-left[
 ```{r ar-process-1, fig.show='hide'}
 set.seed(5)
 arima.sim(list(order = c(1, 1, 0),
@@ -360,16 +360,18 @@ autoplot(value)
 
 --
 
-.pull_right[
-```{r ref.label='ar-process-1', echo=FALSE, fig.height=5, fig.width=9}
+.pull-right[
+```{r ref.label='ar-process-1', echo=FALSE}
 ```
 ]
+
+.footnote[[*]<small>This is technically not an AR(1) model,<br> but rather an ARIMA(1,1,0).<br> We can see the difference in a stationary versus nonstationary series.</small>]
 
 ---
 
 ## An Example of an AR(2) Process
 
-.pull_left[
+.pull-left[
 ```{r ar-process-2, fig.show='hide'}
 set.seed(5)
 arima.sim(list(order = c(2, 0, 0),
@@ -381,16 +383,16 @@ autoplot(value)
 
 --
 
-.pull_right[
-```{r ref.label='ar-process-2', echo=FALSE, fig.width=9, fig.height=5}
+.pull-right[
+```{r ref.label='ar-process-2', echo=FALSE}
 ```
 ]
 
 ---
 
-## Another Example of an AR(2) Process
+## Another Example of an AR(2)<sup>*</sup> Process
 
-.pull_left[
+.pull-left[
 ```{r ar-process-3, fig.show='hide'}
 set.seed(5)
 arima.sim(list(order = c(2, 1, 0),
@@ -402,10 +404,12 @@ autoplot(value)
 
 --
 
-.pull_right[
-```{r ref.label='ar-process-3', echo=FALSE, fig.height=5, fig.width=9}
+.pull-right[
+```{r ref.label='ar-process-3', echo=FALSE}
 ```
 ]
+
+.footnote[[*]<small>This is technically not an AR(2) model,<br> but rather an ARIMA(2,1,0).<br> We can see the difference in a stationary versus nonstationary series.</small>]
 
 ---
 
@@ -428,6 +432,52 @@ autoplot(value)
 --
 
 - $\varepsilon_{t}$ is a white noise process with mean 0 and variance/standard deviation of 1.
+
+---
+
+## An Example of an MA(1) Process
+
+.pull-left[
+```{r ma-process, fig.show='hide'}
+set.seed(5)
+arima.sim(list(order = c(0, 0, 1),
+ma = 0.5), n = 300) %>%
+as_tsibble() %>%
+autoplot(value)
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='ma-process', echo=FALSE}
+```
+]
+
+---
+
+## An Example of an MA(2) Process
+
+.pull-left[
+
+```{r ma-process-1, fig.show='hide'}
+set.seed(5)
+arima.sim(list(order = c(0, 0, 2),
+ma = c(0.6, 0.3)), n = 300) %>%
+as_tsibble() %>%
+autoplot(value)
+```
+
+]
+
+--
+
+.pull-right[
+
+```{r ref.label='ma-process-1', echo=FALSE}
+```
+
+]
 
 ---
 
