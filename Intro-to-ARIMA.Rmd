@@ -60,10 +60,10 @@ for (i in package_list){
 
 --
 
-- $E[(y_{t_{k}} - \mu)(y_{t_{k'}} - \mu)] = \gamma_{t_{k}-t_{k'}} \space \forall \space t_{k}, t_{k'}$ (constant autocovariance)
+- $E[(y_{t} - \mu)(y_{t'} - \mu)] = \gamma_{t-t'} \space \forall \space t, t'$ (constant autocovariance)
 
 --
-  - When $k = k'$, the autocovariance is the variance.
+  - When $t = t'$, the autocovariance is the variance.
   
 --
 
@@ -248,9 +248,9 @@ Sales_tsib %>% ACF() %>% autoplot()
 uroot_table <- Sales_tsib %>% 
 features(Sales, unitroot_kpss) %>% 
 bind_cols(Sales_tsib %>%
-features(Sales, unitroot_ndiffs)) %>% 
+features(Sales, unitroot_nsdiffs)) %>% 
 bind_cols(Sales_tsib %>% 
-features(Sales, unitroot_nsdiffs))
+features(difference(Sales, 12), unitroot_ndiffs))
 knitr::kable(uroot_table, format = "html",
 digits = 2, align = "c")
 ```
@@ -644,7 +644,7 @@ autoplot(Sales_tsib, level=95)
 
 ```{r accuracy-arima}
 fcst <- fit %>% forecast(h = "1 year")
-fcst %>% accuracy(Sales_tsib) %>% knitr::kable(format = "html", align = "c")
+fcst %>% accuracy(Sales_tsib) %>% knitr::kable(format = "html", align = "c", digits = 2)
 ```
 
 - RMSE and MASE are commonly utilized accuracy measures. RMSE (Root Mean Square Error) is in the units of the variable of interest. 
@@ -696,9 +696,449 @@ plot_type = "partial")
 - Neither the PACF nor the ACF seem to decay exponentially.
 
 - We could naively go with an $ARIMA(2,1,4)$ model, but this may be too complex.
+
+- It is better to try out both an $ARIMA(2,1,0)$ and $ARIMA(0,1,4)$ first. 
 ]
 
 .pull-right[
 ```{r ref.label='pacf-acf', echo=FALSE, fig.height=6}
 ```
 ]
+
+---
+
+## Model Estimation and Forecasting
+
+.pull-left[
+```{r model-estim}
+models <- train_data %>% 
+model(arima210 = ARIMA(Sales ~ pdq(2,1,0)),
+arima014 = ARIMA(Sales ~ pdq(0,1,4)),
+arima_auto = ARIMA(Sales))  
+models %>% glance() %>% 
+arrange(AICc) %>% 
+select(.model:BIC) %>% 
+knitr::kable(format = "html", align = "c", digits = 2)
+```
+]
+
+--
+
+.pull-right[
+```{r resid-display, fig.height=5}
+models %>% select(arima_auto) %>% 
+gg_tsresiduals()
+```
+]
+
+---
+  
+## Summary of Procedures for Modeling an ARIMA Process
+
+.pull-left[
+### Automatic Process
+- Transform data if necessary to obtain constant variance.
+- The `ARIMA()` procedure handles differencing for stationarity and order selection.
+- Check residuals from model to ensure they are white noise.
+- Produce forecasts from automatically selected model.
+]
+
+--
+
+.pull-right[
+### Hands-On Process
+- Transform data if necessary to obtain constant variance.
+- Review data for stationarity (visual inspection, KPSS tests, etc.).
+- Review ACF and PACF plots and make some initial model guesses. 
+- Compare several reasonable candidate models (including the automatically selected model), and choose the once which minimizes the AICc (or another information criterion). 
+- Check the residuals from this model to ensure they are white noise.
+- Produce forecasts from the selected model. 
+]
+
+---
+
+## The Role of the Constant and Difference in the Model
+
+- We can control whether or not a constant is included in the model by the use of 0 preceding the `pdq(p,d,q)` special. 
+- `model(my_arima = ARIMA(my_var ~ 0 + pdq(p,d,q)))` to exclude a constant or `model(my_arima = ARIMA(my_var ~ 1 + pdq(p,d,q)))` to include a constant
+- If neither 0 nor 1 is specified, the constant is included depending on if its inclusion minimizes the AICc or not, for $d=0$ or $d=1$. For $d>1$, no constant is included. 
+- The constant can also affect the long-term forecasts.
+- $c=0$:
+  - $d=0$ -> forecasts go to zero.
+  - $d=1$ -> forecasts go to a nonzero constant.
+  - $d=2$ -> forecasts become a straight line.
+- $c\neq0$:
+  - $d=0$ -> forecasts go to mean of data.
+  - $d=1$ -> forecasts follow straight line.
+  - $d=2$ -> this is not allowed in the `fable::ARIMA()` function, but the forecasts would follow a quadratic trend.
+- The degree of $d$ also matters to the long-term forecasts. The greater the value of $d$, the more quickly prediction intervals increase in size.
+
+---
+
+## How Degree of $d$ Affects Prediction Intervals
+
+.pull-left[
+```{r dod, fig.show='hide'}
+train_data %>% 
+gg_tsdisplay(difference(Sales, differences = 2), plot_type = "partial")
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='dod', echo=FALSE, fig.height=6}
+```
+- An `ARIMA(0,2,1)` looks reasonable.
+]
+
+---
+
+## How Degree of $d$ Affects Prediction Intervals, cont.
+
+.pull-left[
+```{r arima-d, fig.show='hide'}
+my_models <- train_data %>% 
+model(arima111 = ARIMA(Sales ~ pdq(1,1,1)),
+arima021 = ARIMA(Sales ~ pdq(0,2,1)))
+my_models %>% 
+forecast(h = "1 year") %>% 
+autoplot(Sales_tsib, level = 95)
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='arima-d', echo=FALSE}
+```
+]
+
+---
+
+## What About Seasonal Models?
+
+- We briefly touched on seasonal ARIMA models earlier in the session.
+- It is usually obvious if there is (strong) seasonality in the data, due to spikes at lags on the PACF/ACF plots, as well as patterns in a simple line plot of the data.
+- The sales data we previously considered does not have a seasonal pattern, so let's take a look at some seasonal data.
+- We will use quarterly tourism data from Australia for the purpose of Holiday.
+
+---
+
+## Modeling Seasonal Data
+
+.pull-left[
+```{r tourism, fig.show='hide'}
+h_tourism <- tourism %>% 
+group_by(Purpose) %>% 
+summarize(Trips = sum(Trips)) %>% 
+filter(Purpose == "Holiday") 
+h_tourism_train <- h_tourism %>% 
+filter_index(. ~ "2016 Q4")
+h_tourism %>% 
+autoplot(Trips)
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='tourism', echo=FALSE, fig.height=6}
+```
+- Note the slight nonconstant variance; we will need to transform the series prior to modeling.
+]
+
+---
+
+## Transforming the Data to Stabilize Variance
+
+.pull-left[
+```{r lambda, fig.show='hide'}
+lambda_value <- h_tourism_train %>% 
+features(Trips, guerrero) %>% 
+pull(lambda_guerrero)
+h_tourism %>% 
+autoplot(box_cox(Trips, lambda_value))
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='lambda', echo=FALSE, fig.height=5}
+```
+- This doesn't seem to have done a lot to stabilize the variance, but it may be the best we can do.
+- Data is still nonstationary, so we will need to difference.
+]
+
+---
+
+## Differencing Seasonal Data
+
+- We will try seasonal differencing first and then see if we also need to first-difference the data.
+
+--
+
+```{r seas-diff}
+## table for reviewing unit root results
+bind_cols(h_tourism_train %>% 
+features(Trips, unitroot_nsdiffs),
+h_tourism_train %>% 
+features(difference(Trips, 4), unitroot_ndiffs) %>%
+select(ndiffs)) %>%
+knitr::kable(format = "html",
+align = "c")
+```
+
+---
+
+## Differencing Seasonal Data, cont.
+
+.pull-left[
+```{r seas-diff2, fig.show='hide'}
+## adding transformed vars to data set
+h_tourism_train <- h_tourism_train %>% 
+mutate(Trips_t = box_cox(Trips, lambda_value)) %>% 
+mutate(Trips_t_s = difference(Trips_t, 4),
+Trips_t_s_d = difference(Trips_t_s, 1))
+
+## visual inspection for stationarity
+h_tourism_train %>% 
+pivot_longer(-c(Purpose, Quarter),
+names_to = 'Variable', values_to = 'Trips') %>% 
+mutate(Variable = as.factor(Variable)) %>% 
+ggplot(aes(Quarter, Trips)) +
+geom_line() +
+facet_grid(vars(Variable), scales = 'free_y')
+
+h_tourism_train <- h_tourism_train %>% select(-c(Trips_t:Trips_t_s_d)) # removing vars we don't need
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='seas-diff2', echo=FALSE, fig.height=6}
+```
+]
+
+--
+
+- Visually, there seems to be some stationarity benefit from taking a first difference in addition to the seasonal difference.
+
+---
+
+## Examination of the PACF/ACF Plots
+
+.pull-left[
+```{r seas-pacf-acf, fig.show='hide'}
+## note that we are using the transformed, 
+## seasonally differenced, and first-differenced variable 
+h_tourism_train %>% 
+gg_tsdisplay(difference(Trips, 4) %>% difference(), plot_type = "partial", lag_max = 20)
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='seas-pacf-acf', echo=FALSE, fig.height=6}
+```
+]
+
+--
+
+- It looks like there are lag spikes on the ACF plot on lags 1 and 4 and on lags 1, 2, and 4 on the PACF plot. This suggests we try an $ARIMA(2,1,1)(1,1,1)_{4}$ model. 
+
+---
+
+## Seasonal ARIMA Modelling
+
+.pull-left[
+```{r seas-arima-mod}
+seas_mods <- h_tourism_train %>% 
+model(arima211111 = 
+ARIMA(box_cox(Trips, lambda_value) ~ pdq(2,1,1) + PDQ(1,1,1)), # use the transformed, but not differenced variable since differences specified in formula
+auto_arima = ARIMA(box_cox(Trips, lambda_value)))
+
+seas_mods %>% glance() %>% 
+arrange(AICc) %>% 
+select(.model:BIC) %>% 
+knitr::kable(format = 'html', align = 'c',
+digits = 2)
+```
+]
+
+--
+
+.pull-right[
+```{r seas-arima-mod-2}
+seas_mods %>% pivot_longer(-Purpose) %>% 
+knitr::kable(format = 'html', align='c', digits = 2)
+```
+
+--
+
+- The automatically selected, simpler model has a lower AICc than the model we specified, so we will choose that model.
+
+]
+
+---
+
+## Residual Review for Seasonal Model
+
+.pull-left[
+```{r seas-resid, fig.show='hide'}
+seas_mods %>% select(auto_arima) %>% 
+gg_tsresiduals()
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='seas-resid', echo=FALSE}
+```
+]
+
+--
+
+- The residuals look very good, so we are okay to proceed with forecasting.
+
+---
+
+## Forecasting with a Seasonal Model
+
+.pull-left[
+```{r seas-forecast, fig.show='hide'}
+h_tourism_train %>% #not using the seas_mods object
+#since it makes the back transformations more difficult
+model(ARIMA(box_cox(Trips, lambda_value))) %>% 
+forecast(h = "1 year") %>% 
+autoplot(h_tourism,level = 95)
+```
+]
+
+--
+
+.pull-right[
+```{r ref.label='seas-forecast', echo=FALSE, fig.height=6}
+```
+]
+- The model definitely under-predicts tourism in the winter and spring months (Q3 and Q4). This makes sense given past trends, but this is a case of where a model with external regressors may be helpful in predicting this uptick in travel.
+
+---
+
+## Forecast Accuracy for a Seasonal Model
+
+- The framework is generally the same as with the nonseasonal model. For comparison, we are estimating a seasonal naive model to see if our model outperforms.
+
+```{r seas-accuracy}
+h_tourism_train %>% 
+model(ARIMA(box_cox(Trips, lambda_value)),
+SNAIVE(Trips)) %>%
+forecast(h="1 year") %>% 
+accuracy(h_tourism) %>% 
+select(.model, RMSE, MASE) %>% 
+knitr::kable(format = "html", align = "c", digits = 2)
+```
+
+- The accuracy isn't great, but at least it's better than a seasonal naive model.
+
+---
+
+## Estimating Models for Multiple Series
+
+- It's easy in `fable` to estimate models for many time series at once. 
+- If we have a `tsibble` with multiple series, and key structure denoted accordingly, `fable` can figure out that we want a separate model(s) for each series.
+- Note that for this to work, the data will need to be in long format.
+
+---
+
+## Estimating Models for Multiple Series, cont.
+
+.pull-left[
+```{r mult-fable}
+tourism_train <- tourism %>% 
+filter_index(. ~ "2016 Q4")
+
+accuracy_table <- tourism_train %>% 
+filter(Purpose == "Holiday") %>% 
+model(ARIMA(Trips),
+SNAIVE(Trips)) %>% 
+forecast(h = "1 year") %>% 
+accuracy(tourism) %>% 
+select(.model:Purpose, RMSE, MASE) %>% 
+arrange(State, Region,Purpose, .model) %>% 
+slice_head(n=10) #there are actually 304 series
+```
+]
+
+--
+
+.pull-right[
+```{r mult-fable-table}
+accuracy_table %>% 
+knitr::kable(format = "html", align = "c", digits = 2)
+```
+]
+
+- Sometimes the `ARIMA()` model is more accurate than the `SNAIVE()` model, and sometimes not. This also varies depending on metric considered.
+
+---
+
+## Conclusion
+
+- ARIMA models are one of the most commonly used univariate time series methods.
+- These models can be useful when:
+  - The data are believed to be a function of previous values and/or previous errors.
+  - You don't have access to/are unaware of other predictor variables.
+- `fable`,`feasts`, and `tsibble` allow you to produce many ARIMA models/forecasts quickly with minimal code, and no use of `purrr`, `for` loops, etc. required.
+
+---
+
+class: center, middle, inverse
+
+# Appendix
+
+---
+
+## Parameter Estimation with `fable`
+
+- Once we have selected the order of the model, the parameter values need to be estimated.
+- Maximum Likelihood Estimation (MLE) is commonly used. 
+- MLE searches for values of the parameters $c$, $\phi_1....\phi_p$, and $\theta_1...\theta_q$ which maximize the probability that the data observed arose from a process with such parameters.
+- In the ARIMA context, MLE is similar to least squares (minimizing the sum of the squared residuals).
+- Note that when we call `report()` on a `mable` (`fable` model object), we see an entry for *log-likelihood*. 
+- This refers to the logarithm of the likelihood that the data come from the estimated model. 
+- We want to maximize this value, though AICc (next slide) is more commonly used as a measure of model accuracy.
+
+---
+
+## Information Criteria
+
+- We previously utilized the AICc in comparing models.
+- The AICc (Akaike Corrected Information Criterion) is one of several information criteria used to select a good model.
+- Note that the $y_t$ variable must be the same to compare between models.
+  - We cannot use the AICc or other information criterion to compare between models with different $d$.
+- The AIC (not corrected) is basically -2*log-likelihood + 2 times the number of parameters including $\sigma$. 
+  - The AICc more heavily penalizes for the number of parameters, especially as it relates to the observations in the model. 
+- We want to minimize the information criterion (consider the -2 in the equation), so a negative number with a higher magnitude is better.
+
+---
+
+## Prediction Intervals
+
+- As mentioned previously, the width and increase of width of prediction intervals is related to $d$. 
+- In general, prediction interval calculation for ARIMA models is complex, particularly beyond the first period.
+  - For the first period, the 95% prediction interval is $\hat{y}_{T+1} \pm 1.96\hat{\sigma}$, where $\hat{\sigma}$ is the standard deviation of the residuals. Consider that this is because the inputs we have for the model are known, but beyond $T+1$ we have to use forecasted inputs for certain or all values.
+- For an $ARIMA(0,0,q)$ model, the forecast variance at time $T+h$ can be expressed as follows:
+$$\hat{\sigma}^2_h = \hat{\sigma}^2 + \hat{\sigma}^2 \sum_{i=1}^{h-1}\theta^2_i$$ for $h>1$
+- Recall that a stationary $AR(p)$ model can be inverted as an $MA(\infty)$ model, so the equation above shows us a way to calculate intervals for stationary $AR(p)$ models.
+
+  
+
+
+  
+  
+  
