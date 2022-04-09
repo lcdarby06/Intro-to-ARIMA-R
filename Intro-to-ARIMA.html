@@ -692,7 +692,7 @@ autoplot(Sales_tsib, level=95)
 
 ```r
 fcst &lt;- fit %&gt;% forecast(h = "1 year")
-fcst %&gt;% accuracy(Sales_tsib) %&gt;% knitr::kable(format = "html", align = "c")
+fcst %&gt;% accuracy(Sales_tsib) %&gt;% knitr::kable(format = "html", align = "c", digits = 2)
 ```
 
 &lt;table&gt;
@@ -714,14 +714,14 @@ fcst %&gt;% accuracy(Sales_tsib) %&gt;% knitr::kable(format = "html", align = "c
   &lt;tr&gt;
    &lt;td style="text-align:center;"&gt; ARIMA(Sales) &lt;/td&gt;
    &lt;td style="text-align:center;"&gt; Test &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 2.800488 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 3.647755 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 2.965582 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 1.066894 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 1.131092 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 0.3590155 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 0.3314654 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 0.7894508 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 2.8 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 3.65 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 2.97 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.07 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.13 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.36 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.33 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.79 &lt;/td&gt;
   &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
@@ -776,11 +776,674 @@ plot_type = "partial")
 - Neither the PACF nor the ACF seem to decay exponentially.
 
 - We could naively go with an `\(ARIMA(2,1,4)\)` model, but this may be too complex.
+
+- It is better to try out both an `\(ARIMA(2,1,0)\)` and `\(ARIMA(0,1,4)\)` first. 
 ]
 
 .pull-right[
 &lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-11-1.png" width="504" /&gt;
 ]
+
+---
+
+## Model Estimation and Forecasting
+
+.pull-left[
+
+```r
+models &lt;- train_data %&gt;% 
+model(arima210 = ARIMA(Sales ~ pdq(2,1,0)),
+arima014 = ARIMA(Sales ~ pdq(0,1,4)),
+arima_auto = ARIMA(Sales))  
+models %&gt;% glance() %&gt;% 
+arrange(AICc) %&gt;% 
+select(.model:BIC) %&gt;% 
+knitr::kable(format = "html", align = "c", digits = 2)
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; .model &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; sigma2 &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; log_lik &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; AIC &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; AICc &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; BIC &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; arima_auto &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.88 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -236.72 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 479.44 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 479.62 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 488.20 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; arima210 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.93 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -237.84 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 483.67 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 483.97 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 495.35 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; arima014 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.92 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -236.80 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 485.60 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 486.25 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 503.12 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+]
+
+--
+
+.pull-right[
+
+```r
+models %&gt;% select(arima_auto) %&gt;% 
+gg_tsresiduals()
+```
+
+&lt;img src="Intro-to-ARIMA_files/figure-html/resid-display-1.png" width="504" /&gt;
+]
+
+---
+  
+## Summary of Procedures for Modeling an ARIMA Process
+
+.pull-left[
+### Automatic Process
+- Transform data if necessary to obtain constant variance.
+- The `ARIMA()` procedure handles differencing for stationarity and order selection.
+- Check residuals from model to ensure they are white noise.
+- Produce forecasts from automatically selected model.
+]
+
+--
+
+.pull-right[
+### Hands-On Process
+- Transform data if necessary to obtain constant variance.
+- Review data for stationarity (visual inspection, KPSS tests, etc.).
+- Review ACF and PACF plots and make some initial model guesses. 
+- Compare several reasonable candidate models (including the automatically selected model), and choose the once which minimizes the AICc (or another information criterion). 
+- Check the residuals from this model to ensure they are white noise.
+- Produce forecasts from the selected model. 
+]
+
+---
+
+## The Role of the Constant and Difference in the Model
+
+- We can control whether or not a constant is included in the model by the use of 0 preceding the `pdq(p,d,q)` special. 
+- `model(my_arima = ARIMA(my_var ~ 0 + pdq(p,d,q)))` to exclude a constant or `model(my_arima = ARIMA(my_var ~ 1 + pdq(p,d,q)))` to include a constant
+- If neither 0 nor 1 is specified, the constant is included depending on if its inclusion minimizes the AICc or not, for `\(d=0\)` or `\(d=1\)`. For `\(d&gt;1\)`, no constant is included. 
+- The constant can also affect the long-term forecasts.
+- `\(c=0\)`:
+  - `\(d=0\)` -&gt; forecasts go to zero.
+  - `\(d=1\)` -&gt; forecasts go to a nonzero constant.
+  - `\(d=2\)` -&gt; forecasts become a straight line.
+- `\(c\neq0\)`:
+  - `\(d=0\)` -&gt; forecasts go to mean of data.
+  - `\(d=1\)` -&gt; forecasts follow straight line.
+  - `\(d=2\)` -&gt; this is not allowed in the `fable::ARIMA()` function, but the forecasts would follow a quadratic trend.
+- The degree of `\(d\)` also matters to the long-term forecasts. The greater the value of `\(d\)`, the more quickly prediction intervals increase in size.
+
+---
+
+## How Degree of `\(d\)` Affects Prediction Intervals
+
+.pull-left[
+
+```r
+train_data %&gt;% 
+gg_tsdisplay(difference(Sales, differences = 2), plot_type = "partial")
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-12-1.png" width="504" /&gt;
+- An `ARIMA(0,2,1)` looks reasonable.
+]
+
+---
+
+## How Degree of `\(d\)` Affects Prediction Intervals, cont.
+
+.pull-left[
+
+```r
+my_models &lt;- train_data %&gt;% 
+model(arima111 = ARIMA(Sales ~ pdq(1,1,1)),
+arima021 = ARIMA(Sales ~ pdq(0,2,1)))
+my_models %&gt;% 
+forecast(h = "1 year") %&gt;% 
+autoplot(Sales_tsib, level = 95)
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-13-1.png" width="504" /&gt;
+]
+
+---
+
+## What About Seasonal Models?
+
+- We briefly touched on seasonal ARIMA models earlier in the session.
+- It is usually obvious if there is (strong) seasonality in the data, due to spikes at lags on the PACF/ACF plots, as well as patterns in a simple line plot of the data.
+- The sales data we previously considered does not have a seasonal pattern, so let's take a look at some seasonal data.
+- We will use quarterly tourism data from Australia for the purpose of Holiday.
+
+---
+
+## Modeling Seasonal Data
+
+.pull-left[
+
+```r
+h_tourism &lt;- tourism %&gt;% 
+group_by(Purpose) %&gt;% 
+summarize(Trips = sum(Trips)) %&gt;% 
+filter(Purpose == "Holiday") 
+h_tourism_train &lt;- h_tourism %&gt;% 
+filter_index(. ~ "2016 Q4")
+h_tourism %&gt;% 
+autoplot(Trips)
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-14-1.png" width="504" /&gt;
+- Note the slight nonconstant variance; we will need to transform the series prior to modeling.
+]
+
+---
+
+## Transforming the Data to Stabilize Variance
+
+.pull-left[
+
+```r
+lambda_value &lt;- h_tourism_train %&gt;% 
+features(Trips, guerrero) %&gt;% 
+pull(lambda_guerrero)
+h_tourism %&gt;% 
+autoplot(box_cox(Trips, lambda_value))
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-15-1.png" width="504" /&gt;
+- This doesn't seem to have done a lot to stabilize the variance, but it may be the best we can do.
+- Data is still nonstationary, so we will need to difference.
+]
+
+---
+
+## Differencing Seasonal Data
+
+- We will try seasonal differencing first and then see if we also need to first-difference the data.
+
+--
+
+
+```r
+## table for reviewing unit root results
+bind_cols(h_tourism_train %&gt;% 
+features(Trips, unitroot_nsdiffs),
+h_tourism_train %&gt;% 
+features(difference(Trips, 4), unitroot_ndiffs) %&gt;%
+select(ndiffs)) %&gt;%
+knitr::kable(format = "html",
+align = "c")
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; Purpose &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; nsdiffs &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; ndiffs &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+
+## Differencing Seasonal Data, cont.
+
+.pull-left[
+
+```r
+## adding transformed vars to data set
+h_tourism_train &lt;- h_tourism_train %&gt;% 
+mutate(Trips_t = box_cox(Trips, lambda_value)) %&gt;% 
+mutate(Trips_t_s = difference(Trips_t, 4),
+Trips_t_s_d = difference(Trips_t_s, 1))
+
+## visual inspection for stationarity
+h_tourism_train %&gt;% 
+pivot_longer(-c(Purpose, Quarter),
+names_to = 'Variable', values_to = 'Trips') %&gt;% 
+mutate(Variable = as.factor(Variable)) %&gt;% 
+ggplot(aes(Quarter, Trips)) +
+geom_line() +
+facet_grid(vars(Variable), scales = 'free_y')
+```
+
+```r
+h_tourism_train &lt;- h_tourism_train %&gt;% select(-c(Trips_t:Trips_t_s_d)) # removing vars we don't need
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-16-1.png" width="504" /&gt;
+]
+
+--
+
+- Visually, there seems to be some stationarity benefit from taking a first difference in addition to the seasonal difference.
+
+---
+
+## Examination of the PACF/ACF Plots
+
+.pull-left[
+
+```r
+## note that we are using the transformed, 
+## seasonally differenced, and first-differenced variable 
+h_tourism_train %&gt;% 
+gg_tsdisplay(difference(Trips, 4) %&gt;% difference(), plot_type = "partial", lag_max = 20)
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-17-1.png" width="504" /&gt;
+]
+
+--
+
+- It looks like there are lag spikes on the ACF plot on lags 1 and 4 and on lags 1, 2, and 4 on the PACF plot. This suggests we try an `\(ARIMA(2,1,1)(1,1,1)_{4}\)` model. 
+
+---
+
+## Seasonal ARIMA Modelling
+
+.pull-left[
+
+```r
+seas_mods &lt;- h_tourism_train %&gt;% 
+model(arima211111 = 
+ARIMA(box_cox(Trips, lambda_value) ~ pdq(2,1,1) + PDQ(1,1,1)), # use the transformed, but not differenced variable since differences specified in formula
+auto_arima = ARIMA(box_cox(Trips, lambda_value)))
+
+seas_mods %&gt;% glance() %&gt;% 
+arrange(AICc) %&gt;% 
+select(.model:BIC) %&gt;% 
+knitr::kable(format = 'html', align = 'c',
+digits = 2)
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; .model &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; sigma2 &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; log_lik &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; AIC &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; AICc &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; BIC &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; auto_arima &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 17180.58 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -450.27 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 906.55 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 906.91 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 913.34 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; arima211111 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 16361.26 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; -448.28 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 908.56 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 909.87 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 922.13 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+]
+
+--
+
+.pull-right[
+
+```r
+seas_mods %&gt;% pivot_longer(-Purpose) %&gt;% 
+knitr::kable(format = 'html', align='c', digits = 2)
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; Purpose &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; name &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; value &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; arima211111 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; &amp;lt;ARIMA(2,1,1)(1,1,1)[4]&amp;gt; &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; auto_arima &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; &amp;lt;ARIMA(0,1,1)(0,1,1)[4]&amp;gt; &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+--
+
+- The automatically selected, simpler model has a lower AICc than the model we specified, so we will choose that model.
+
+]
+
+---
+
+## Residual Review for Seasonal Model
+
+.pull-left[
+
+```r
+seas_mods %&gt;% select(auto_arima) %&gt;% 
+gg_tsresiduals()
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-18-1.png" width="504" /&gt;
+]
+
+--
+
+- The residuals look very good, so we are okay to proceed with forecasting.
+
+---
+
+## Forecasting with a Seasonal Model
+
+.pull-left[
+
+```r
+h_tourism_train %&gt;% #not using the seas_mods object
+#since it makes the back transformations more difficult
+model(ARIMA(box_cox(Trips, lambda_value))) %&gt;% 
+forecast(h = "1 year") %&gt;% 
+autoplot(h_tourism,level = 95)
+```
+]
+
+--
+
+.pull-right[
+&lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-19-1.png" width="504" /&gt;
+]
+- The model definitely under-predicts tourism in the winter and spring months (Q3 and Q4). This makes sense given past trends, but this is a case of where a model with external regressors may be helpful in predicting this uptick in travel.
+
+---
+
+## Forecast Accuracy for a Seasonal Model
+
+- The framework is generally the same as with the nonseasonal model. For comparison, we are estimating a seasonal naive model to see if our model outperforms.
+
+
+```r
+h_tourism_train %&gt;% 
+model(ARIMA(box_cox(Trips, lambda_value)),
+SNAIVE(Trips)) %&gt;%
+forecast(h="1 year") %&gt;% 
+accuracy(h_tourism) %&gt;% 
+select(.model, RMSE, MASE) %&gt;% 
+knitr::kable(format = "html", align = "c", digits = 2)
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; .model &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; RMSE &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; MASE &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; ARIMA(box_cox(Trips, lambda_value)) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 636.86 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.28 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 681.29 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.46 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+- The accuracy isn't great, but at least it's better than a seasonal naive model.
+
+---
+
+## Estimating Models for Multiple Series
+
+- It's easy in `fable` to estimate models for many time series at once. 
+- If we have a `tsibble` with multiple series, and key structure denoted accordingly, `fable` can figure out that we want a separate model(s) for each series.
+- Note that for this to work, the data will need to be in long format.
+
+
+```r
+tourism_train &lt;- tourism %&gt;% 
+filter_index(. ~ "2016 Q4")
+
+tourism_train %&gt;% 
+filter(Purpose == "Holiday") %&gt;% 
+model(ARIMA(Trips),
+SNAIVE(Trips)) %&gt;% 
+forecast(h = "1 year") %&gt;% 
+accuracy(tourism) %&gt;% 
+select(.model:Purpose, RMSE, MASE) %&gt;% 
+arrange(State, Region,Purpose, .model) %&gt;% 
+slice_head(n=10) %&gt;% #there are actually 304 series
+knitr::kable(format = "html", align = "c", digits = 2)
+```
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:center;"&gt; .model &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Region &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; State &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; Purpose &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; RMSE &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; MASE &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Canberra &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; ACT &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 52.04 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.46 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Canberra &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; ACT &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 37.69 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.81 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Blue Mountains &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 44.59 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.62 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Blue Mountains &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 35.75 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.34 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Capital Country &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 24.64 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.02 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Capital Country &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 30.92 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.99 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Central Coast &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 15.31 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.50 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Central Coast &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 11.84 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.46 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Central NSW &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 38.05 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1.13 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Central NSW &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 29.68 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 0.84 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+- Sometimes the `ARIMA()` model is more accurate than the `SNAIVE()` model, and sometimes not. This also varies depending on metric considered.
+
+---
+
+## Conclusion
+
+- ARIMA models are one of the most commonly used univariate time series methods.
+- These models can be useful when:
+  - The data are believed to be a function of previous values and/or previous errors.
+  - You don't have access to/are unaware of other predictor variables.
+- `fable`,`feasts`, and `tsibble` allow you to produce many ARIMA models/forecasts quickly with minimal code, and no use of `purrr`, `for` loops, etc. required.
+
+---
+
+class: center, middle, inverse
+
+# Appendix
+
+---
+
+## Parameter Estimation with `fable`
+
+- Once we have selected the order of the model, the parameter values need to be estimated.
+- Maximum Likelihood Estimation (MLE) is commonly used. 
+- MLE searches for values of the parameters `\(c\)`, `\(\phi_1....\phi_p\)`, and `\(\theta_1...\theta_q\)` which maximize the probability that the data observed arose from a process with such parameters.
+- In the ARIMA context, MLE is similar to least squares (minimizing the sum of the squared residuals).
+- Note that when we call `report()` on a `mable` (`fable` model object), we see an entry for *log-likelihood*. 
+- This refers to the logarithm of the likelihood that the data come from the estimated model. 
+- We want to maximize this value, though AICc (next slide) is more commonly used as a measure of model accuracy.
+
+---
+
+## Information Criteria
+
+- We previously utilized the AICc in comparing models.
+- The AICc (Akaike Corrected Information Criterion) is one of several information criteria used to select a good model.
+- Note that the `\(y_t\)` variable must be the same to compare between models.
+  - We cannot use the AICc or other information criterion to compare between models with different `\(d\)`.
+- The AIC (not corrected) is basically -2*log-likelihood + 2 times the number of parameters including `\(\sigma\)`. 
+  - The AICc more heavily penalizes for the number of parameters, especially as it relates to the observations in the model. 
+- We want to minimize the information criterion (consider the -2 in the equation), so a negative number with a higher magnitude is better.
+
+---
+
+## Prediction Intervals
+
+- As mentioned previously, the width and increase of width of prediction intervals is related to `\(d\)`. 
+- In general, prediction interval calculation for ARIMA models is complex, particularly beyond the first period.
+  - For the first period, the 95% prediction interval is `\(\hat{y}_{T+1} \pm 1.96\hat{\sigma}\)`, where `\(\hat{\sigma}\)` is the standard deviation of the residuals. Consider that this is because the inputs we have for the model are known, but beyond `\(T+1\)` we have to use forecasted inputs for certain (or all values).
+- For an `\(ARIMA(0,0,q)\)` model, the forecast variance at time `\(T+h\)` can be expressed as follows:
+`$$\hat{\sigma}^2_h = \hat{\sigma}^2 + \hat{\sigma}^2 \sum_{i=1}^{h-1}\theta^2_i$$` for `\(h&gt;1\)`
+- Recall that a stationary `\(AR(p)\)` model can be inverted as an `\(MA(\infty)\)` model, so the equation above shows us a way to calculate intervals for stationary `\(AR(p)\)` models.
+
+  
+
+
+  
+  
+  
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
