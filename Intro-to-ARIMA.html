@@ -299,13 +299,13 @@ digits = 2, align = "c")
 --
 
 - We can also use the backshift operator to describe differencing.
-`$$y' = y_{t} - y_{t-1} = y_{t} - By_{t} = (1-B)y_{t}$$`
+`$$y'_t = y_{t} - y_{t-1} = y_{t} - By_{t} = (1-B)y_{t}$$`
 - We can treat the expressions in `\(B\)` like polynomials and solve for roots (thus the unit root concept).
   
 --
 
 `$$\begin{align*}
-y'' &amp;= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\ 
+y''_t &amp;= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\ 
     &amp;= y_{t} - By_{t} - By_{t} + B^2y_{t}\\ 
     &amp;= y_{t} - 2By_{t} + B^2y_{t}\\ 
     &amp;= (B-1)^2y_{t}\\ 
@@ -738,8 +738,8 @@ fcst %&gt;% accuracy(Sales_tsib) %&gt;% knitr::kable(format = "html", align = "c
 --
 
 - The traditional way is to rely on the ACF and PACF plots as a starting point.
-  - PACF stands for "Partial Autocorrelation Function", and is an autocorrelation function which controls for the effect of `\(y_{t-k}\)` on `\(y_t\)`, removing the effects of lags `\(1...k-1\)` on `\(y_t\)`.
-  - The partial autocorrelation for lag `\(k = \phi_k\)`, so it represents the `\(k\)`th (i.e., last) `\(p\)` in an `\(AR(k)\)` model.
+  - PACF stands for "Partial Autocorrelation Function", and is an autocorrelation function which controls for the effect of `\(y_{t-p}\)` on `\(y_t\)`, removing the effects of lags `\(1...p-1\)` on `\(y_t\)`.
+  - The partial autocorrelation for lag `\(p = \phi_p\)`, so it represents the `\(p\)`th (last) significant lag in an `\(AR(p)\)` model.
   - Thus, we look at the last significant partial autocorrelation to give us an idea of the order of `\(p\)`.
 
 --
@@ -958,7 +958,7 @@ summarize(Trips = sum(Trips)) %&gt;%
 filter(Purpose == "Holiday") 
 h_tourism_train &lt;- h_tourism %&gt;% 
 filter_index(. ~ "2016 Q4")
-h_tourism %&gt;% 
+h_tourism_train %&gt;% 
 autoplot(Trips)
 ```
 ]
@@ -1173,11 +1173,7 @@ knitr::kable(format = 'html', align='c', digits = 2)
   &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-
---
-
 - The automatically selected, simpler model has a lower AICc than the model we specified, so we will choose that model.
-
 ]
 
 ---
@@ -1222,7 +1218,7 @@ autoplot(h_tourism,level = 95)
 .pull-right[
 &lt;img src="Intro-to-ARIMA_files/figure-html/unnamed-chunk-19-1.png" width="504" /&gt;
 ]
-- The model definitely under-predicts tourism in the winter and spring months (Q3 and Q4). This makes sense given past trends, but this is a case of where a model with external regressors may be helpful in predicting this uptick in travel.
+- The model definitely under-predicts tourism in the winter and spring months (Q3 and Q4). The forecast makes sense given past trends, but this is a case of where a model with external regressors may be helpful in predicting this uptick in travel.
 
 ---
 
@@ -1358,8 +1354,6 @@ slice_head(n=6) #there are actually 304 series
   &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
-
-- Sometimes the `ARIMA()` model is more accurate than the `SNAIVE()` model, and sometimes not. This also varies depending on metric considered.
 
 ---
 

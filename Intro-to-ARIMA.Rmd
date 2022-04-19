@@ -835,7 +835,7 @@ summarize(Trips = sum(Trips)) %>%
 filter(Purpose == "Holiday") 
 h_tourism_train <- h_tourism %>% 
 filter_index(. ~ "2016 Q4")
-h_tourism %>% 
+h_tourism_train %>% 
 autoplot(Trips)
 ```
 ]
@@ -976,11 +976,7 @@ digits = 2)
 seas_mods %>% pivot_longer(-Purpose) %>% 
 knitr::kable(format = 'html', align='c', digits = 2)
 ```
-
---
-
 - The automatically selected, simpler model has a lower AICc than the model we specified, so we will choose that model.
-
 ]
 
 ---
@@ -1025,7 +1021,7 @@ autoplot(h_tourism,level = 95)
 ```{r ref.label='seas-forecast', echo=FALSE, fig.height=6}
 ```
 ]
-- The model definitely under-predicts tourism in the winter and spring months (Q3 and Q4). This makes sense given past trends, but this is a case of where a model with external regressors may be helpful in predicting this uptick in travel.
+- The model definitely under-predicts tourism in the winter and spring months (Q3 and Q4). The forecast makes sense given past trends, but this is a case of where a model with external regressors may be helpful in predicting this uptick in travel.
 
 ---
 
@@ -1079,8 +1075,6 @@ slice_head(n=6) #there are actually 304 series
 accuracy_table %>% 
 knitr::kable(format = "html", align = "c", digits = 2)
 ```
-
-- Sometimes the `ARIMA()` model is more accurate than the `SNAIVE()` model, and sometimes not. This also varies depending on metric considered.
 
 ---
 
