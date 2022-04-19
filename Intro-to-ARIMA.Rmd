@@ -89,8 +89,8 @@ $$E[(y_{t} - \mu)(y_{t} - \mu)] = \sigma^2$$
 
 --
 
-$$\gamma_{k-k'} = \left\{\begin{aligned}
-&\sigma^2 &&if \space k = k'\\
+$$\gamma_{t-t'} = \left\{\begin{aligned}
+&\sigma^2 &&if \space t = t'\\
 &0 && otherwise
 \end{aligned}
 \right.$$
@@ -136,7 +136,7 @@ $$\gamma_{k-k'} = \left\{\begin{aligned}
 
   - The difference of a value with the previous value is called *first-order differencing*: $y'_{t} = y_{t} - y_{t-1}$.
   - Note that for a random walk model, $y'_{t} = \varepsilon_{t}$. 
-  - Thus, this series is now stationary given the properties of $\varepsilon_{t}$.
+  - Thus, this series is now stationary given the properties of $\varepsilon_{t}$ (white noise).
   
 --
 
@@ -250,14 +250,14 @@ features(Sales, unitroot_kpss) %>%
 bind_cols(Sales_tsib %>%
 features(Sales, unitroot_nsdiffs)) %>% 
 bind_cols(Sales_tsib %>% 
-features(difference(Sales, 12), unitroot_ndiffs))
+features(Sales, unitroot_ndiffs)) # not testing seasonally differenced data since there is no evidence of seasonality
 knitr::kable(uroot_table, format = "html",
 digits = 2, align = "c")
 ```
 
 --
 
-- We clearly have a unit root (we reject the null hypothesis of stationarity), but it doesn't look like we will need to take a seasonal difference.
+- We clearly have a unit root (we reject the null hypothesis of stationarity), but we don't need to take a seasonal difference.
 
 ---
 
@@ -280,13 +280,13 @@ digits = 2, align = "c")
 --
 
 - We can also use the backshift operator to describe differencing.
-$$y' = y_{t} - y_{t-1} = y_{t} - By_{t} = (1-B)y_{t}$$
+$$y'_t = y_{t} - y_{t-1} = y_{t} - By_{t} = (1-B)y_{t}$$
 - We can treat the expressions in $B$ like polynomials and solve for roots (thus the unit root concept).
   
 --
 
 $$\begin{align*}
-y'' &= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\ 
+y''_t &= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\ 
     &= y_{t} - By_{t} - By_{t} + B^2y_{t}\\ 
     &= y_{t} - 2By_{t} + B^2y_{t}\\ 
     &= (B-1)^2y_{t}\\ 
@@ -318,7 +318,7 @@ $$y_{t} = c + \phi_{1}y_{t-1} + \phi_{2}y_{t-2} + ... + \phi_{p}y_{t-p} + \varep
 
 - $AR(p)$ models, stationary data, and constraints:
   - $AR(1)$ model: $-1 < \phi_{1} < 1$
-  - $AR(2)$ model: $-1 < \phi_{2} < 1$, $\phi_{1} + \phi_{2} < 1$, $\phi_{1} - \phi_{2} < 1$
+  - $AR(2)$ model: $-1 < \phi_{2} < 1$, $\phi_{1} + \phi_{2} < 1$, $\phi_{2} - \phi_{1} < 1$
 
 --
 
@@ -431,7 +431,7 @@ autoplot(value)
 
 --
 
-- $\varepsilon_{t}$ is a white noise process with mean 0 and variance/standard deviation of 1.
+- $\varepsilon_{t}$ is a white noise process with mean 0 and constant variance.
 
 ---
 
@@ -481,7 +481,7 @@ autoplot(value)
 
 ---
 
-## Invertibility
+## Invertibility: Relating AR to MA Models
 
 - We can express any *stationary* $AR(p)$ model as an $MA(\infty)$ model, using backwards substitution. Below is an example for an $AR(1)$ model.
 
@@ -502,7 +502,7 @@ y_{t} &= \phi_{1}y_{t-1} + \varepsilon_{t}\\
   
 ---
 
-## Invertibility, cont.
+## Invertibility: Relating MA to AR Models
 
 - An $MA(q)$ process can be inverted to an $AR(\infty)$ process if we impose constraints on the parameters. These constraints are similar to those we saw for $AR(p)$ processes.
 
@@ -582,7 +582,7 @@ report(fit)
 
 ## Residual Review
 
-- It's a good idea to check out the residuals to make sure there is no info contained in the residuals that could be utilized in the model.
+- We will check out the residuals to make sure there is no info contained in the residuals that could be utilized in the model.
 
 --
 
@@ -659,8 +659,8 @@ fcst %>% accuracy(Sales_tsib) %>% knitr::kable(format = "html", align = "c", dig
 --
 
 - The traditional way is to rely on the ACF and PACF plots as a starting point.
-  - PACF stands for "Partial Autocorrelation Function", and is an autocorrelation function which controls for the effect of $y_{t-k}$ on $y_t$, removing the effects of lags $1...k-1$ on $y_t$.
-  - The partial autocorrelation for lag $k = \phi_k$, so it represents the $k$th (i.e., last) $p$ in an $AR(k)$ model.
+  - PACF stands for "Partial Autocorrelation Function", and is an autocorrelation function which controls for the effect of $y_{t-p}$ on $y_t$, removing the effects of lags $1...p-1$ on $y_t$.
+  - The partial autocorrelation for lag $p = \phi_p$, so it represents the $p$th (last) significant lag in an $AR(p)$ model.
   - Thus, we look at the last significant partial autocorrelation to give us an idea of the order of $p$.
 
 --
@@ -726,7 +726,7 @@ knitr::kable(format = "html", align = "c", digits = 2)
 
 .pull-right[
 ```{r resid-display, fig.height=5}
-models %>% select(arima_auto) %>% 
+models %>% select(arima014) %>% 
 gg_tsresiduals()
 ```
 ]
@@ -882,9 +882,9 @@ autoplot(box_cox(Trips, lambda_value))
 ```{r seas-diff}
 ## table for reviewing unit root results
 bind_cols(h_tourism_train %>% 
-features(Trips, unitroot_nsdiffs),
+features(box_cox(Trips, lambda_value), unitroot_nsdiffs),
 h_tourism_train %>% 
-features(difference(Trips, 4), unitroot_ndiffs) %>%
+features(difference(box_cox(Trips, lambda_value), 4), unitroot_ndiffs) %>%
 select(ndiffs)) %>%
 knitr::kable(format = "html",
 align = "c")
@@ -935,7 +935,7 @@ h_tourism_train <- h_tourism_train %>% select(-c(Trips_t:Trips_t_s_d)) # removin
 ## note that we are using the transformed, 
 ## seasonally differenced, and first-differenced variable 
 h_tourism_train %>% 
-gg_tsdisplay(difference(Trips, 4) %>% difference(), plot_type = "partial", lag_max = 20)
+gg_tsdisplay(difference(box_cox(Trips, lambda_value), 4) %>% difference(), plot_type = "partial", lag_max = 20)
 ```
 ]
 
@@ -1057,7 +1057,6 @@ knitr::kable(format = "html", align = "c", digits = 2)
 
 ## Estimating Models for Multiple Series, cont.
 
-.pull-left[
 ```{r mult-fable}
 tourism_train <- tourism %>% 
 filter_index(. ~ "2016 Q4")
@@ -1070,18 +1069,16 @@ forecast(h = "1 year") %>%
 accuracy(tourism) %>% 
 select(.model:Purpose, RMSE, MASE) %>% 
 arrange(State, Region,Purpose, .model) %>% 
-slice_head(n=10) #there are actually 304 series
+slice_head(n=6) #there are actually 304 series
 ```
-]
+
 
 --
 
-.pull-right[
-```{r mult-fable-table}
+```{r mult-fable-table, echo=FALSE}
 accuracy_table %>% 
 knitr::kable(format = "html", align = "c", digits = 2)
 ```
-]
 
 - Sometimes the `ARIMA()` model is more accurate than the `SNAIVE()` model, and sometimes not. This also varies depending on metric considered.
 

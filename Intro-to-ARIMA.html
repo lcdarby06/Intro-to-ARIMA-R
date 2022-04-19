@@ -59,10 +59,10 @@ class: center, middle, inverse, title-slide
 
 --
 
-- `\(E[(y_{t_{k}} - \mu)(y_{t_{k'}} - \mu)] = \gamma_{t_{k}-t_{k'}} \space \forall \space t_{k}, t_{k'}\)` (constant autocovariance)
+- `\(E[(y_{t} - \mu)(y_{t'} - \mu)] = \gamma_{t-t'} \space \forall \space t, t'\)` (constant autocovariance)
 
 --
-  - When `\(k = k'\)`, the autocovariance is the variance.
+  - When `\(t = t'\)`, the autocovariance is the variance.
   
 --
 
@@ -88,8 +88,8 @@ class: center, middle, inverse, title-slide
 
 --
 
-`$$\gamma_{k-k'} = \left\{\begin{aligned}
-&amp;\sigma^2 &amp;&amp;if \space k = k'\\
+`$$\gamma_{t-t'} = \left\{\begin{aligned}
+&amp;\sigma^2 &amp;&amp;if \space t = t'\\
 &amp;0 &amp;&amp; otherwise
 \end{aligned}
 \right.$$`
@@ -135,7 +135,7 @@ class: center, middle, inverse, title-slide
 
   - The difference of a value with the previous value is called *first-order differencing*: `\(y'_{t} = y_{t} - y_{t-1}\)`.
   - Note that for a random walk model, `\(y'_{t} = \varepsilon_{t}\)`. 
-  - Thus, this series is now stationary given the properties of `\(\varepsilon_{t}\)`.
+  - Thus, this series is now stationary given the properties of `\(\varepsilon_{t}\)` (white noise).
   
 --
 
@@ -248,9 +248,9 @@ Sales_tsib %&gt;% ACF() %&gt;% autoplot()
 uroot_table &lt;- Sales_tsib %&gt;% 
 features(Sales, unitroot_kpss) %&gt;% 
 bind_cols(Sales_tsib %&gt;%
-features(Sales, unitroot_ndiffs)) %&gt;% 
+features(Sales, unitroot_nsdiffs)) %&gt;% 
 bind_cols(Sales_tsib %&gt;% 
-features(Sales, unitroot_nsdiffs))
+features(Sales, unitroot_ndiffs)) # not testing seasonally differenced data since there is no evidence of seasonality
 knitr::kable(uroot_table, format = "html",
 digits = 2, align = "c")
 ```
@@ -260,23 +260,23 @@ digits = 2, align = "c")
   &lt;tr&gt;
    &lt;th style="text-align:center;"&gt; kpss_stat &lt;/th&gt;
    &lt;th style="text-align:center;"&gt; kpss_pvalue &lt;/th&gt;
-   &lt;th style="text-align:center;"&gt; ndiffs &lt;/th&gt;
    &lt;th style="text-align:center;"&gt; nsdiffs &lt;/th&gt;
+   &lt;th style="text-align:center;"&gt; ndiffs &lt;/th&gt;
   &lt;/tr&gt;
  &lt;/thead&gt;
 &lt;tbody&gt;
   &lt;tr&gt;
    &lt;td style="text-align:center;"&gt; 2.62 &lt;/td&gt;
    &lt;td style="text-align:center;"&gt; 0.01 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 1 &lt;/td&gt;
    &lt;td style="text-align:center;"&gt; 0 &lt;/td&gt;
+   &lt;td style="text-align:center;"&gt; 1 &lt;/td&gt;
   &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 
 --
 
-- We clearly have a unit root (we reject the null hypothesis of stationarity), but it doesn't look like we will need to take a seasonal difference.
+- We clearly have a unit root (we reject the null hypothesis of stationarity), but we don't need to take a seasonal difference.
 
 ---
 
@@ -337,7 +337,7 @@ y'' &amp;= (y_{t} - y_{t-1}) - (y_{t-1} - y_{t-2})\\
 
 - `\(AR(p)\)` models, stationary data, and constraints:
   - `\(AR(1)\)` model: `\(-1 &lt; \phi_{1} &lt; 1\)`
-  - `\(AR(2)\)` model: `\(-1 &lt; \phi_{2} &lt; 1\)`, `\(\phi_{1} + \phi_{2} &lt; 1\)`, `\(\phi_{1} - \phi_{2} &lt; 1\)`
+  - `\(AR(2)\)` model: `\(-1 &lt; \phi_{2} &lt; 1\)`, `\(\phi_{1} + \phi_{2} &lt; 1\)`, `\(\phi_{2} - \phi_{1} &lt; 1\)`
 
 --
 
@@ -450,7 +450,7 @@ autoplot(value)
 
 --
 
-- `\(\varepsilon_{t}\)` is a white noise process with mean 0 and variance/standard deviation of 1.
+- `\(\varepsilon_{t}\)` is a white noise process with mean 0 and constant variance.
 
 ---
 
@@ -500,7 +500,7 @@ autoplot(value)
 
 ---
 
-## Invertibility
+## Invertibility: Relating AR to MA Models
 
 - We can express any *stationary* `\(AR(p)\)` model as an `\(MA(\infty)\)` model, using backwards substitution. Below is an example for an `\(AR(1)\)` model.
 
@@ -521,7 +521,7 @@ y_{t} &amp;= \phi_{1}y_{t-1} + \varepsilon_{t}\\
   
 ---
 
-## Invertibility, cont.
+## Invertibility: Relating MA to AR Models
 
 - An `\(MA(q)\)` process can be inverted to an `\(AR(\infty)\)` process if we impose constraints on the parameters. These constraints are similar to those we saw for `\(AR(p)\)` processes.
 
@@ -616,7 +616,7 @@ report(fit)
 
 ## Residual Review
 
-- It's a good idea to check out the residuals to make sure there is no info contained in the residuals that could be utilized in the model.
+- We will check out the residuals to make sure there is no info contained in the residuals that could be utilized in the model.
 
 --
 
@@ -846,7 +846,7 @@ knitr::kable(format = "html", align = "c", digits = 2)
 .pull-right[
 
 ```r
-models %&gt;% select(arima_auto) %&gt;% 
+models %&gt;% select(arima014) %&gt;% 
 gg_tsresiduals()
 ```
 
@@ -1005,9 +1005,9 @@ autoplot(box_cox(Trips, lambda_value))
 ```r
 ## table for reviewing unit root results
 bind_cols(h_tourism_train %&gt;% 
-features(Trips, unitroot_nsdiffs),
+features(box_cox(Trips, lambda_value), unitroot_nsdiffs),
 h_tourism_train %&gt;% 
-features(difference(Trips, 4), unitroot_ndiffs) %&gt;%
+features(difference(box_cox(Trips, lambda_value), 4), unitroot_ndiffs) %&gt;%
 select(ndiffs)) %&gt;%
 knitr::kable(format = "html",
 align = "c")
@@ -1078,7 +1078,7 @@ h_tourism_train &lt;- h_tourism_train %&gt;% select(-c(Trips_t:Trips_t_s_d)) # r
 ## note that we are using the transformed, 
 ## seasonally differenced, and first-differenced variable 
 h_tourism_train %&gt;% 
-gg_tsdisplay(difference(Trips, 4) %&gt;% difference(), plot_type = "partial", lag_max = 20)
+gg_tsdisplay(difference(box_cox(Trips, lambda_value), 4) %&gt;% difference(), plot_type = "partial", lag_max = 20)
 ```
 ]
 
@@ -1273,12 +1273,16 @@ knitr::kable(format = "html", align = "c", digits = 2)
 - If we have a `tsibble` with multiple series, and key structure denoted accordingly, `fable` can figure out that we want a separate model(s) for each series.
 - Note that for this to work, the data will need to be in long format.
 
+---
+
+## Estimating Models for Multiple Series, cont.
+
 
 ```r
 tourism_train &lt;- tourism %&gt;% 
 filter_index(. ~ "2016 Q4")
 
-tourism_train %&gt;% 
+accuracy_table &lt;- tourism_train %&gt;% 
 filter(Purpose == "Holiday") %&gt;% 
 model(ARIMA(Trips),
 SNAIVE(Trips)) %&gt;% 
@@ -1286,9 +1290,11 @@ forecast(h = "1 year") %&gt;%
 accuracy(tourism) %&gt;% 
 select(.model:Purpose, RMSE, MASE) %&gt;% 
 arrange(State, Region,Purpose, .model) %&gt;% 
-slice_head(n=10) %&gt;% #there are actually 304 series
-knitr::kable(format = "html", align = "c", digits = 2)
+slice_head(n=6) #there are actually 304 series
 ```
+
+
+--
 
 &lt;table&gt;
  &lt;thead&gt;
@@ -1350,38 +1356,6 @@ knitr::kable(format = "html", align = "c", digits = 2)
    &lt;td style="text-align:center;"&gt; 30.92 &lt;/td&gt;
    &lt;td style="text-align:center;"&gt; 0.99 &lt;/td&gt;
   &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Central Coast &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 15.31 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 0.50 &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Central Coast &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 11.84 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 0.46 &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:center;"&gt; ARIMA(Trips) &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Central NSW &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 38.05 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 1.13 &lt;/td&gt;
-  &lt;/tr&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:center;"&gt; SNAIVE(Trips) &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Central NSW &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; New South Wales &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; Holiday &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 29.68 &lt;/td&gt;
-   &lt;td style="text-align:center;"&gt; 0.84 &lt;/td&gt;
-  &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 
@@ -1433,7 +1407,7 @@ class: center, middle, inverse
 
 - As mentioned previously, the width and increase of width of prediction intervals is related to `\(d\)`. 
 - In general, prediction interval calculation for ARIMA models is complex, particularly beyond the first period.
-  - For the first period, the 95% prediction interval is `\(\hat{y}_{T+1} \pm 1.96\hat{\sigma}\)`, where `\(\hat{\sigma}\)` is the standard deviation of the residuals. Consider that this is because the inputs we have for the model are known, but beyond `\(T+1\)` we have to use forecasted inputs for certain (or all values).
+  - For the first period, the 95% prediction interval is `\(\hat{y}_{T+1} \pm 1.96\hat{\sigma}\)`, where `\(\hat{\sigma}\)` is the standard deviation of the residuals. Consider that this is because the inputs we have for the model are known, but beyond `\(T+1\)` we have to use forecasted inputs for certain or all values.
 - For an `\(ARIMA(0,0,q)\)` model, the forecast variance at time `\(T+h\)` can be expressed as follows:
 `$$\hat{\sigma}^2_h = \hat{\sigma}^2 + \hat{\sigma}^2 \sum_{i=1}^{h-1}\theta^2_i$$` for `\(h&gt;1\)`
 - Recall that a stationary `\(AR(p)\)` model can be inverted as an `\(MA(\infty)\)` model, so the equation above shows us a way to calculate intervals for stationary `\(AR(p)\)` models.
